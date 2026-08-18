@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RR Calculator</title>
+<style>
+  :root{
+    --bg-0:#08090b;
+    --bg-1:#101216;
+    --panel:rgba(255,255,255,0.035);
+    --panel-border:rgba(255,255,255,0.09);
+    --line:rgba(255,255,255,0.07);
+    --text-hi:#eef0f2;
+    --text-mid:#9aa1ab;
+    --text-low:#5c626c;
+    --amber:#c9a227;
+    --green:#3ecf8e;
+    --red:#e85c5c;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  html,body{
+    height:100%;
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(201,162,39,0.06), transparent 60%),
+      radial-gradient(ellipse 700px 600px at 100% 100%, rgba(62,207,142,0.04), transparent 60%),
+      linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%);
+    color:var(--text-hi);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  body{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding:56px 16px 80px;
+  }
+
+  .wrap{ width:100%; max-width:520px; }
+
+  /* ---------- Header ---------- */
+  header{ text-align:center; margin-bottom:32px; }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.32em;
+    color:var(--amber);
+    text-transform:uppercase;
+    opacity:0.85;
+    margin-bottom:14px;
+  }
+  h1{
+    font-size:32px;
+    font-weight:700;
+    letter-spacing:0.02em;
+    background:linear-gradient(180deg,#ffffff, #b9bdc4);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .brand{
+    margin-top:10px;
+    font-size:12px;
+    letter-spacing:0.12em;
+    color:var(--text-low);
+    font-style:italic;
+  }
+  .brand em{ color:var(--text-mid); font-style:italic; }
+
+  /* ---------- Card ---------- */
+  .card{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:20px;
+    padding:28px;
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    box-shadow:0 20px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  /* Direction toggle */
+  .toggle{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:22px;
+  }
+  .toggle button{
+    font-family:var(--mono);
+    font-size:13px;
+    letter-spacing:0.08em;
+    padding:11px 0;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,0.02);
+    color:var(--text-mid);
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .toggle button:hover{ border-color:rgba(255,255,255,0.18); color:var(--text-hi); }
+  .toggle button.active-buy{
+    background:rgba(62,207,142,0.12);
+    border-color:rgba(62,207,142,0.5);
+    color:var(--green);
+  }
+  .toggle button.active-sell{
+    background:rgba(232,92,92,0.12);
+    border-color:rgba(232,92,92,0.5);
+    color:var(--red);
+  }
+
+  /* Inputs */
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-bottom:6px;
+  }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field.full{ grid-column:1 / -1; }
+  label{
+    font-size:11px;
+    letter-spacing:0.08em;
+    color:var(--text-low);
+    text-transform:uppercase;
+  }
+  input[type=number]{
+    font-family:var(--mono);
+    font-size:15px;
+    color:var(--text-hi);
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+    outline:none;
+    transition:border-color .15s ease, background .15s ease;
+    width:100%;
+  }
+  input[type=number]:focus{
+    border-color:rgba(201,162,39,0.55);
+    background:rgba(255,255,255,0.05);
+  }
+  input[type=number]::-webkit-inner-spin-button{ opacity:0.4; }
+
+  .actions{
+    display:flex;
+    justify-content:flex-end;
+    margin:14px 0 6px;
+  }
+  .reset-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.06em;
+    color:var(--text-low);
+    background:none;
+    border:1px solid var(--line);
+    padding:7px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .reset-btn:hover{ color:var(--text-hi); border-color:rgba(255,255,255,0.2); }
+
+  .warning{
+    display:none;
+    font-size:12.5px;
+    color:var(--red);
+    background:rgba(232,92,92,0.08);
+    border:1px solid rgba(232,92,92,0.25);
+    padding:10px 12px;
+    border-radius:10px;
+    margin-top:14px;
+    line-height:1.5;
+  }
+  .warning.show{ display:block; }
+
+  hr.div{
+    border:none;
+    height:1px;
+    background:var(--line);
+    margin:24px 0;
+  }
+
+  /* Results */
+  .rr-hero{
+    text-align:center;
+    margin-bottom:22px;
+  }
+  .rr-hero .lbl{
+    font-size:11px;
+    letter-spacing:0.14em;
+    color:var(--text-low);
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .rr-hero .val{
+    font-family:var(--mono);
+    font-size:44px;
+    font-weight:600;
+    letter-spacing:0.01em;
+  }
+  .rr-hero .val.good{ color:var(--green); }
+  .rr-hero .val.mid{ color:var(--amber); }
+  .rr-hero .val.bad{ color:var(--red); }
+
+  .results{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .stat{
+    background:rgba(255,255,255,0.025);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .stat:hover{ border-color:rgba(255,255,255,0.16); background:rgba(255,255,255,0.04); }
+  .stat .lbl{
+    font-size:10.5px;
+    letter-spacing:0.08em;
+    color:var(--text-low);
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .stat .num{
+    font-family:var(--mono);
+    font-size:18px;
+    font-weight:600;
+    color:var(--text-hi);
+  }
+  .stat.loss .num{ color:var(--red); }
+  .stat.profit .num{ color:var(--green); }
+
+  .note{
+    font-size:11.5px;
+    color:var(--text-low);
+    line-height:1.6;
+    margin-top:20px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+  }
+
+  @media (max-width:480px){
+    .grid{ grid-template-columns:1fr; }
+    .results{ grid-template-columns:1fr; }
+    h1{ font-size:26px; }
+    .rr-hero .val{ font-size:36px; }
+    .card{ padding:22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Trading Terminal</div>
+    <h1>RR CALCULATOR</h1>
+    <div class="brand">by: <em>jjjackx ict dicipline</em></div>
+  </header>
+
+  <div class="card">
+
+    <div class="toggle">
+      <button id="btnBuy" class="active-buy">BUY</button>
+      <button id="btnSell">SELL</button>
+    </div>
+
+    <div class="grid">
+      <div class="field full">
+        <label for="equity">Equity / Balance ($)</label>
+        <input type="number" id="equity" value="1000" step="any" inputmode="decimal">
+      </div>
+      <div class="field full">
+        <label for="risk">Risk (%)</label>
+        <input type="number" id="risk" value="1" step="any" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label for="entry">Entry Price</label>
+        <input type="number" id="entry" value="" step="any" inputmode="decimal" placeholder="0.00">
+      </div>
+      <div class="field">
+        <label for="sl">Stop Loss</label>
+        <input type="number" id="sl" value="" step="any" inputmode="decimal" placeholder="0.00">
+      </div>
+      <div class="field full">
+        <label for="tp">Take Profit</label>
+        <input type="number" id="tp" value="" step="any" inputmode="decimal" placeholder="0.00">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="reset-btn" id="resetBtn">RESET</button>
+    </div>
+
+    <div class="warning" id="warning"></div>
+
+    <hr class="div">
+
+    <div class="rr-hero">
+      <div class="lbl">Risk / Reward Ratio</div>
+      <div class="val mid" id="rrVal">—</div>
+    </div>
+
+    <div class="results">
+      <div class="stat">
+        <div class="lbl">Risk Amount</div>
+        <div class="num" id="riskAmount">—</div>
+      </div>
+      <div class="stat loss">
+        <div class="lbl">Potential Loss</div>
+        <div class="num" id="potLoss">—</div>
+      </div>
+      <div class="stat profit">
+        <div class="lbl">Potential Profit</div>
+        <div class="num" id="potProfit">—</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Position Size</div>
+        <div class="num" id="posSize">—</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Risk Distance</div>
+        <div class="num" id="riskDist">—</div>
+      </div>
+      <div class="stat">
+        <div class="lbl">Reward Distance</div>
+        <div class="num" id="rewardDist">—</div>
+      </div>
+    </div>
+
+    <div class="note">
+      Position size dihitung dari Risk Amount ÷ Risk Distance (unit harga). Nilai lot sebenarnya bisa berbeda tergantung jenis instrument, kontrak, dan aturan broker masing-masing.
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const equityEl = $('equity'), riskEl = $('risk'), entryEl = $('entry'), slEl = $('sl'), tpEl = $('tp');
+  const btnBuy = $('btnBuy'), btnSell = $('btnSell');
+  const warningEl = $('warning');
+
+  let direction = 'buy';
+
+  const fmt = n => {
+    if (!isFinite(n)) return '—';
+    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  function setDirection(dir){
+    direction = dir;
+    btnBuy.classList.toggle('active-buy', dir === 'buy');
+    btnSell.classList.toggle('active-sell', dir === 'sell');
+    if (dir === 'buy') btnSell.classList.remove('active-sell');
+    if (dir === 'sell') btnBuy.classList.remove('active-buy');
+    calculate();
+  }
+
+  btnBuy.addEventListener('click', () => setDirection('buy'));
+  btnSell.addEventListener('click', () => setDirection('sell'));
+
+  function resetAll(){
+    equityEl.value = 1000;
+    riskEl.value = 1;
+    entryEl.value = '';
+    slEl.value = '';
+    tpEl.value = '';
+    setDirection('buy');
+    calculate();
+  }
+  $('resetBtn').addEventListener('click', resetAll);
+
+  function calculate(){
+    const equity = parseFloat(equityEl.value);
+    const risk = parseFloat(riskEl.value);
+    const entry = parseFloat(entryEl.value);
+    const sl = parseFloat(slEl.value);
+    const tp = parseFloat(tpEl.value);
+
+    const resultIds = ['riskAmount','potLoss','potProfit','posSize','riskDist','rewardDist'];
+
+    if ([equity, risk, entry, sl, tp].some(v => isNaN(v))) {
+      resultIds.forEach(id => $(id).textContent = '—');
+      $('rrVal').textContent = '—';
+      $('rrVal').className = 'val mid';
+      warningEl.classList.remove('show');
+      return;
+    }
+
+    let directionError = '';
+    if (direction === 'buy' && !(sl < entry && tp > entry)) {
+      directionError = 'Untuk posisi BUY, Stop Loss harus di bawah Entry dan Take Profit harus di atas Entry.';
+    }
+    if (direction === 'sell' && !(sl > entry && tp < entry)) {
+      directionError = 'Untuk posisi SELL, Stop Loss harus di atas Entry dan Take Profit harus di bawah Entry.';
+    }
+
+    if (directionError) {
+      warningEl.textContent = directionError;
+      warningEl.classList.add('show');
+    } else {
+      warningEl.classList.remove('show');
+    }
+
+    const riskAmount = equity * (risk / 100);
+    const riskDistance = Math.abs(entry - sl);
+    const rewardDistance = Math.abs(tp - entry);
+    const rr = riskDistance > 0 ? rewardDistance / riskDistance : NaN;
+    const potentialLoss = riskAmount;
+    const potentialProfit = riskAmount * rr;
+    const positionSize = riskDistance > 0 ? riskAmount / riskDistance : NaN;
+
+    $('riskAmount').textContent = '$' + fmt(riskAmount);
+    $('potLoss').textContent = '-$' + fmt(potentialLoss);
+    $('potProfit').textContent = '+$' + fmt(potentialProfit);
+    $('riskDist').textContent = fmt(riskDistance);
+    $('rewardDist').textContent = fmt(rewardDistance);
+    $('posSize').textContent = isFinite(positionSize) ? fmt(positionSize) + ' units' : '—';
+
+    const rrEl = $('rrVal');
+    if (!isFinite(rr)) {
+      rrEl.textContent = '—';
+      rrEl.className = 'val mid';
+    } else {
+      rrEl.textContent = '1 : ' + rr.toFixed(2);
+      rrEl.className = 'val ' + (rr >= 2 ? 'good' : rr >= 1 ? 'mid' : 'bad');
+    }
+  }
+
+  [equityEl, riskEl, entryEl, slEl, tpEl].forEach(el => el.addEventListener('input', calculate));
+
+  calculate();
+</script>
+
+</body>
+</html>
