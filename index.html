@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RR Calculator — jjjackx</title>
+<style>
+  :root{
+    --bg-0:#050608;
+    --bg-1:#0d0f13;
+    --panel:rgba(255,255,255,0.032);
+    --panel-2:rgba(255,255,255,0.018);
+    --line:rgba(255,255,255,0.08);
+    --line-soft:rgba(255,255,255,0.05);
+    --gold:#c9a227;
+    --gold-soft:rgba(201,162,39,0.16);
+    --green:#38c793;
+    --green-soft:rgba(56,199,147,0.14);
+    --red:#e2584f;
+    --red-soft:rgba(226,88,79,0.14);
+    --text-hi:#f4f1ea;
+    --text-mid:#8c8f97;
+    --text-low:#54575e;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  html,body{ height:100%; }
+
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(1100px 520px at 50% -12%, rgba(201,162,39,0.09), transparent 62%),
+      radial-gradient(800px 620px at 105% 100%, rgba(56,199,147,0.05), transparent 60%),
+      radial-gradient(700px 500px at -10% 100%, rgba(226,88,79,0.04), transparent 60%),
+      linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%);
+    color:var(--text-hi);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    justify-content:center;
+    padding:60px 16px 90px;
+  }
+
+  .wrap{ width:100%; max-width:860px; }
+
+  /* ---------------- Header ---------------- */
+  header{ text-align:center; margin-bottom:36px; }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.36em;
+    color:var(--gold);
+    text-transform:uppercase;
+    opacity:0.85;
+    margin-bottom:16px;
+  }
+  h1{
+    font-family:var(--serif);
+    font-size:40px;
+    font-weight:400;
+    letter-spacing:0.04em;
+    background:linear-gradient(180deg,#ffffff 10%, #b7bbc2 90%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .brand{
+    margin-top:12px;
+    font-family:var(--serif);
+    font-style:italic;
+    font-size:13px;
+    letter-spacing:0.04em;
+    color:var(--text-low);
+  }
+  .brand span{ color:var(--text-mid); }
+
+  /* ---------------- Card ---------------- */
+  .terminal{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:22px;
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    box-shadow:0 30px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+    overflow:hidden;
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+
+  .panel{ padding:30px 32px; }
+  .panel-inputs{ border-right:1px solid var(--line-soft); }
+
+  .section-label{
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--text-low);
+    margin-bottom:16px;
+  }
+
+  /* Pair select */
+  select{
+    width:100%;
+    font-family:var(--mono);
+    font-size:14px;
+    color:var(--text-hi);
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:11px 12px;
+    outline:none;
+    appearance:none;
+    -webkit-appearance:none;
+    background-image:linear-gradient(45deg, transparent 50%, var(--text-low) 50%), linear-gradient(135deg, var(--text-low) 50%, transparent 50%);
+    background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+    background-size:5px 5px, 5px 5px;
+    background-repeat:no-repeat;
+    cursor:pointer;
+    transition:border-color .15s ease;
+    margin-bottom:18px;
+  }
+  select:focus{ border-color:rgba(201,162,39,0.55); }
+
+  /* Direction toggle */
+  .toggle{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:20px;
+  }
+  .toggle button{
+    font-family:var(--mono);
+    font-size:12.5px;
+    letter-spacing:0.1em;
+    padding:11px 0;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,0.02);
+    color:var(--text-mid);
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .toggle button:hover{ border-color:rgba(255,255,255,0.2); color:var(--text-hi); }
+  .toggle button.active-buy{ background:var(--green-soft); border-color:rgba(56,199,147,0.5); color:var(--green); }
+  .toggle button.active-sell{ background:var(--red-soft); border-color:rgba(226,88,79,0.5); color:var(--red); }
+
+  /* Inputs */
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .field{ display:flex; flex-direction:column; gap:6px; }
+  .field.full{ grid-column:1 / -1; }
+  label{
+    font-size:10.5px;
+    letter-spacing:0.09em;
+    color:var(--text-low);
+    text-transform:uppercase;
+  }
+  input[type=number]{
+    font-family:var(--mono);
+    font-size:15px;
+    color:var(--text-hi);
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+    outline:none;
+    width:100%;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  input[type=number]:focus{ border-color:rgba(201,162,39,0.55); background:rgba(255,255,255,0.05); }
+
+  .actions{ display:flex; justify-content:flex-end; margin-top:16px; }
+  .reset-btn{
+    font-family:var(--mono);
+    font-size:11.5px;
+    letter-spacing:0.08em;
+    color:var(--text-low);
+    background:none;
+    border:1px solid var(--line);
+    padding:8px 16px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .reset-btn:hover{ color:var(--text-hi); border-color:rgba(255,255,255,0.22); }
+
+  .pip-mode{ display:none; margin-bottom:20px; }
+  .pip-mode.show{ display:block; }
+  .pip-mode-toggle{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .pip-mode-toggle button{
+    font-family:var(--mono);
+    font-size:11.5px;
+    letter-spacing:0.03em;
+    padding:9px 6px;
+    border-radius:9px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,0.02);
+    color:var(--text-mid);
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .pip-mode-toggle button:hover{ border-color:rgba(255,255,255,0.2); color:var(--text-hi); }
+  .pip-mode-toggle button.active{
+    background:var(--gold-soft);
+    border-color:rgba(201,162,39,0.55);
+    color:var(--gold);
+  }
+  .pip-info{
+    font-size:11px;
+    line-height:1.6;
+    color:var(--text-low);
+    background:rgba(255,255,255,0.02);
+    border:1px solid var(--line-soft);
+    border-radius:10px;
+    padding:10px 12px;
+  }
+  .pip-info b{ color:var(--text-mid); font-weight:500; }
+
+  .warning{
+    display:none;
+    font-size:12px;
+    line-height:1.55;
+    color:var(--red);
+    background:var(--red-soft);
+    border:1px solid rgba(226,88,79,0.3);
+    padding:10px 12px;
+    border-radius:10px;
+    margin-top:16px;
+  }
+  .warning.show{ display:block; }
+
+  /* ---------------- Results panel ---------------- */
+  .panel-results{ display:flex; flex-direction:column; align-items:center; }
+
+  .gauge-wrap{ position:relative; width:180px; height:180px; margin:6px 0 18px; }
+  .gauge-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .gauge-track{ fill:none; stroke:var(--line); stroke-width:10; }
+  .gauge-fill{
+    fill:none;
+    stroke-width:10;
+    stroke-linecap:round;
+    transition:stroke-dashoffset .35s ease, stroke .35s ease;
+  }
+  .gauge-center{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:4px;
+  }
+  .gauge-center .rr-lbl{
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:0.14em;
+    color:var(--text-low);
+    text-transform:uppercase;
+  }
+  .gauge-center .rr-val{
+    font-family:var(--mono);
+    font-size:27px;
+    font-weight:600;
+  }
+  .rr-val.good{ color:var(--green); }
+  .rr-val.mid{ color:var(--gold); }
+  .rr-val.bad{ color:var(--red); }
+
+  .results{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .stat{
+    background:var(--panel-2);
+    border:1px solid var(--line-soft);
+    border-radius:12px;
+    padding:13px 14px;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .stat:hover{ border-color:rgba(255,255,255,0.16); background:rgba(255,255,255,0.045); }
+  .stat .lbl{
+    font-size:10px;
+    letter-spacing:0.07em;
+    color:var(--text-low);
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .stat .num{
+    font-family:var(--mono);
+    font-size:16.5px;
+    font-weight:600;
+    color:var(--text-hi);
+  }
+  .stat .sub{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-low);
+    margin-top:2px;
+  }
+  .stat.loss .num{ color:var(--red); }
+  .stat.profit .num{ color:var(--green); }
+
+  .note{
+    grid-column:1 / -1;
+    padding:20px 32px 26px;
+    font-size:11.5px;
+    line-height:1.65;
+    color:var(--text-low);
+    border-top:1px solid var(--line-soft);
+  }
+  .note b{ color:var(--text-mid); font-weight:500; }
+
+  @media (max-width:720px){
+    .layout{ grid-template-columns:1fr; }
+    .panel-inputs{ border-right:none; border-bottom:1px solid var(--line-soft); }
+    h1{ font-size:32px; }
+  }
+  @media (max-width:420px){
+    .grid{ grid-template-columns:1fr; }
+    .results{ grid-template-columns:1fr; }
+    .panel{ padding:24px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Trading Terminal</div>
+    <h1>RR Calculator</h1>
+    <div class="brand">by: <span>jjjackx ict dicipline</span></div>
+  </header>
+
+  <div class="terminal">
+    <div class="layout">
+
+      <!-- INPUTS -->
+      <div class="panel panel-inputs">
+        <div class="section-label">Setup</div>
+
+        <select id="pair">
+          <option value="EURUSD">EUR / USD</option>
+          <option value="GBPUSD">GBP / USD</option>
+          <option value="GBPJPY">GBP / JPY</option>
+          <option value="XAUUSD" selected>XAU / USD — Gold</option>
+          <option value="XAGUSD">XAG / USD — Silver</option>
+          <option value="SP500">S&amp;P 500</option>
+          <option value="NAS100">Nasdaq (NQ100)</option>
+        </select>
+
+        <div class="pip-mode" id="pipModeBox">
+          <div class="pip-mode-toggle">
+            <button id="btnPipWide" class="active">1 pip = 0.10</button>
+            <button id="btnPipTight">1 pip = 0.01</button>
+          </div>
+          <div class="pip-info" id="pipInfo"></div>
+        </div>
+
+        <div class="toggle">
+          <button id="btnBuy" class="active-buy">BUY</button>
+          <button id="btnSell">SELL</button>
+        </div>
+
+        <div class="grid">
+          <div class="field full">
+            <label for="equity">Equity / Balance ($)</label>
+            <input type="number" id="equity" value="1000" step="any" inputmode="decimal">
+          </div>
+          <div class="field full">
+            <label for="risk">Risk (%)</label>
+            <input type="number" id="risk" value="1" step="any" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="entry">Entry Price</label>
+            <input type="number" id="entry" value="" step="any" inputmode="decimal" placeholder="0.00">
+          </div>
+          <div class="field">
+            <label for="sl">Stop Loss</label>
+            <input type="number" id="sl" value="" step="any" inputmode="decimal" placeholder="0.00">
+          </div>
+          <div class="field full">
+            <label for="tp">Take Profit</label>
+            <input type="number" id="tp" value="" step="any" inputmode="decimal" placeholder="0.00">
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="reset-btn" id="resetBtn">RESET</button>
+        </div>
+
+        <div class="warning" id="warning"></div>
+      </div>
+
+      <!-- RESULTS -->
+      <div class="panel panel-results">
+        <div class="section-label" style="align-self:flex-start;">Result</div>
+
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 180 180">
+            <circle class="gauge-track" cx="90" cy="90" r="78"></circle>
+            <circle class="gauge-fill" id="gaugeFill" cx="90" cy="90" r="78"
+              stroke-dasharray="490" stroke-dashoffset="490" stroke="#c9a227"></circle>
+          </svg>
+          <div class="gauge-center">
+            <div class="rr-lbl">Risk / Reward</div>
+            <div class="rr-val mid" id="rrVal">—</div>
+          </div>
+        </div>
+
+        <div class="results">
+          <div class="stat">
+            <div class="lbl">Risk Amount</div>
+            <div class="num" id="riskAmount">—</div>
+          </div>
+          <div class="stat loss">
+            <div class="lbl">Potential Loss</div>
+            <div class="num" id="potLoss">—</div>
+          </div>
+          <div class="stat profit">
+            <div class="lbl">Potential Profit</div>
+            <div class="num" id="potProfit">—</div>
+          </div>
+          <div class="stat">
+            <div class="lbl">Position Size</div>
+            <div class="num" id="posSize">—</div>
+          </div>
+          <div class="stat">
+            <div class="lbl">Risk Distance</div>
+            <div class="num" id="riskDist">—</div>
+            <div class="sub" id="riskPips">—</div>
+          </div>
+          <div class="stat">
+            <div class="lbl">Reward Distance</div>
+            <div class="num" id="rewardDist">—</div>
+            <div class="sub" id="rewardPips">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note">
+        <b>Catatan:</b> Position size dihitung dari Risk Amount ÷ Risk Distance (dalam unit harga). Nilai pip/point dan pip value sebenarnya dapat berbeda tergantung jenis instrument, ukuran kontrak, dan spesifikasi masing-masing broker — gunakan angka ini sebagai panduan cepat, bukan acuan mutlak.
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  const PAIRS = {
+    EURUSD: { pip: 0.0001, unit: 'pips' },
+    GBPUSD: { pip: 0.0001, unit: 'pips' },
+    GBPJPY: { pip: 0.01,   unit: 'pips' },
+    XAUUSD: {
+      unit: 'pips', toggle: true,
+      wide: 0.1, tight: 0.01,
+      infoWide: '<b>1 pip = 0.10</b> — konvensi umum broker ECN/Raw seperti IC Markets, Pepperstone, Exness Raw, dan mayoritas prop firm (FTMO, dll). Paling sering dipakai di komunitas ICT / Smart Money Concepts.',
+      infoTight: '<b>1 pip = 0.01</b> — konvensi broker yang menghitung pip seperti forex biasa (2 desimal terakhir = 1 pip), umum dipakai XM, HotForex, OctaFX, dan banyak broker retail Asia.'
+    },
+    XAGUSD: {
+      unit: 'pips', toggle: true,
+      wide: 0.01, tight: 0.001,
+      infoWide: '<b>1 pip = 0.01</b> — konvensi umum sebagian besar broker retail untuk Silver.',
+      infoTight: '<b>1 pip = 0.001</b> — konvensi broker ECN/Raw yang menghitung pip lebih presisi di desimal ke-3.'
+    },
+    SP500:  { pip: 1,      unit: 'points' },
+    NAS100: { pip: 1,      unit: 'points' },
+  };
+
+  let pipMode = 'wide'; // 'wide' or 'tight' — only relevant for pairs with toggle:true
+
+  function getPipSize(info){
+    if (info.toggle) return pipMode === 'wide' ? info.wide : info.tight;
+    return info.pip;
+  }
+
+  function updatePipModeUI(){
+    const info = PAIRS[pairEl.value];
+    const box = $('pipModeBox');
+    if (info.toggle) {
+      box.classList.add('show');
+      $('btnPipWide').textContent = '1 pip = ' + info.wide.toString();
+      $('btnPipTight').textContent = '1 pip = ' + info.tight.toString();
+      $('btnPipWide').classList.toggle('active', pipMode === 'wide');
+      $('btnPipTight').classList.toggle('active', pipMode === 'tight');
+      $('pipInfo').innerHTML = pipMode === 'wide' ? info.infoWide : info.infoTight;
+    } else {
+      box.classList.remove('show');
+    }
+  }
+
+  const equityEl = $('equity'), riskEl = $('risk'), entryEl = $('entry'), slEl = $('sl'), tpEl = $('tp');
+  const pairEl = $('pair');
+  const btnBuy = $('btnBuy'), btnSell = $('btnSell');
+  const warningEl = $('warning');
+  const gaugeFill = $('gaugeFill');
+
+  const CIRC = 2 * Math.PI * 78; // ~490.09
+
+  let direction = 'buy';
+
+  const fmt = (n, d = 2) => {
+    if (!isFinite(n)) return '—';
+    return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  };
+
+  function setDirection(dir){
+    direction = dir;
+    btnBuy.classList.toggle('active-buy', dir === 'buy');
+    btnSell.classList.toggle('active-sell', dir === 'sell');
+    calculate();
+  }
+  btnBuy.addEventListener('click', () => setDirection('buy'));
+  btnSell.addEventListener('click', () => setDirection('sell'));
+
+  $('btnPipWide').addEventListener('click', () => { pipMode = 'wide'; updatePipModeUI(); calculate(); });
+  $('btnPipTight').addEventListener('click', () => { pipMode = 'tight'; updatePipModeUI(); calculate(); });
+
+  pairEl.addEventListener('change', () => { pipMode = 'wide'; updatePipModeUI(); });
+
+  function resetAll(){
+    equityEl.value = 1000;
+    riskEl.value = 1;
+    entryEl.value = '';
+    slEl.value = '';
+    tpEl.value = '';
+    pairEl.value = 'XAUUSD';
+    pipMode = 'wide';
+    updatePipModeUI();
+    setDirection('buy');
+    calculate();
+  }
+  $('resetBtn').addEventListener('click', resetAll);
+
+  function calculate(){
+    const equity = parseFloat(equityEl.value);
+    const risk = parseFloat(riskEl.value);
+    const entry = parseFloat(entryEl.value);
+    const sl = parseFloat(slEl.value);
+    const tp = parseFloat(tpEl.value);
+    const pairInfo = PAIRS[pairEl.value];
+
+    const resultIds = ['riskAmount','potLoss','potProfit','posSize','riskDist','rewardDist'];
+    const subIds = ['riskPips','rewardPips'];
+
+    if ([equity, risk, entry, sl, tp].some(v => isNaN(v))) {
+      resultIds.forEach(id => $(id).textContent = '—');
+      subIds.forEach(id => $(id).textContent = '—');
+      $('rrVal').textContent = '—';
+      $('rrVal').className = 'rr-val mid';
+      gaugeFill.setAttribute('stroke-dashoffset', CIRC);
+      warningEl.classList.remove('show');
+      return;
+    }
+
+    let directionError = '';
+    if (direction === 'buy' && !(sl < entry && tp > entry)) {
+      directionError = 'Untuk posisi BUY, Stop Loss harus di bawah Entry dan Take Profit harus di atas Entry.';
+    }
+    if (direction === 'sell' && !(sl > entry && tp < entry)) {
+      directionError = 'Untuk posisi SELL, Stop Loss harus di atas Entry dan Take Profit harus di bawah Entry.';
+    }
+    warningEl.textContent = directionError;
+    warningEl.classList.toggle('show', !!directionError);
+
+    const riskAmount = equity * (risk / 100);
+    const riskDistance = Math.abs(entry - sl);
+    const rewardDistance = Math.abs(tp - entry);
+    const rr = riskDistance > 0 ? rewardDistance / riskDistance : NaN;
+    const potentialLoss = riskAmount;
+    const potentialProfit = riskAmount * rr;
+    const positionSize = riskDistance > 0 ? riskAmount / riskDistance : NaN;
+
+    const pipSize = getPipSize(pairInfo);
+    const riskPips = riskDistance / pipSize;
+    const rewardPips = rewardDistance / pipSize;
+
+    $('riskAmount').textContent = '$' + fmt(riskAmount);
+    $('potLoss').textContent = '-$' + fmt(potentialLoss);
+    $('potProfit').textContent = '+$' + fmt(potentialProfit);
+    $('posSize').textContent = isFinite(positionSize) ? fmt(positionSize) + ' units' : '—';
+    $('riskDist').textContent = isFinite(riskDistance) ? fmt(riskDistance, 4) : '—';
+    $('rewardDist').textContent = isFinite(rewardDistance) ? fmt(rewardDistance, 4) : '—';
+    $('riskPips').textContent = isFinite(riskPips) ? fmt(riskPips, 1) + ' ' + pairInfo.unit : '—';
+    $('rewardPips').textContent = isFinite(rewardPips) ? fmt(rewardPips, 1) + ' ' + pairInfo.unit : '—';
+
+    const rrEl = $('rrVal');
+    if (!isFinite(rr)) {
+      rrEl.textContent = '—';
+      rrEl.className = 'rr-val mid';
+      gaugeFill.setAttribute('stroke-dashoffset', CIRC);
+    } else {
+      rrEl.textContent = '1:' + rr.toFixed(2);
+      const zone = rr >= 2 ? 'good' : rr >= 1 ? 'mid' : 'bad';
+      rrEl.className = 'rr-val ' + zone;
+      const color = zone === 'good' ? '#38c793' : zone === 'mid' ? '#c9a227' : '#e2584f';
+      gaugeFill.setAttribute('stroke', color);
+      const progress = Math.min(rr / 4, 1);
+      gaugeFill.setAttribute('stroke-dashoffset', CIRC * (1 - progress));
+    }
+  }
+
+  [equityEl, riskEl, entryEl, slEl, tpEl, pairEl].forEach(el => el.addEventListener('input', calculate));
+
+  updatePipModeUI();
+  calculate();
+</script>
+
+</body>
+</html>
